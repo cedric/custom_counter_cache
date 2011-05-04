@@ -1,6 +1,6 @@
 == Custom Counter Cache
 
-
+This is a simple approach to creating a custom counter cache that can be used across multiple models.
 
 === Installation
 
@@ -8,13 +8,37 @@ In Rails 2.3, add the following to your environment.rb:
 
   config.gem 'custom_counter_cache'
 
-In Rails 3 (or if using Bundler), add the following to your Gemfile:
+If using Bundler, add the following to your Gemfile:
 
   gem 'custom_counter_cache'
 
 === Example
 
+== Class with counter cache
 
+This is the block that will be used to calculate the value for the counter cache. It will be called by other models through their association via an after_save or after_destroy callback.
+
+  define_counter_cache :articles_count do |user|
+    user.articles.count(:conditions => "articles.state = 'published'")
+  end
+
+== Class with callbacks
+
+This will define the after_save and after_destroy callbacks. An :if option can be provided to limit when these callbacks get triggered.
+
+  update_counter_cache :user, :articles_count, :if => Proc.new { |article| article.state_changed? }
+
+== Database
+
+To store the counter cache you need to create a column for the model with the counter cache (example: articles_count). If you would like to store all of your counter caches in a single table, you can use this migration:
+
+  create_table :counters do |t|
+    t.references :countable, :polymorphic => true
+    t.string :key, :null => false
+    t.integer :value, :null => false, :default => 0
+    t.timestamps
+  end
+  add_index :counters, [ :countable_id, :countable_type, :key ], :unique => true
 
 === To Do
 

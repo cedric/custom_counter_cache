@@ -5,18 +5,53 @@ module CustomCounterCache::Model
   end
   
   module ActsAsMethods
-    def custom_counter_cache(association_id, options = {}, &block)
-      association_id = association_id.to_sym
-      cache_column   = options.delete(:cache_column) || "#{table_name}_count".to_sym
-      method_name    = "calculate_#{cache_column}".to_sym
-      define_method method_name do
-        send(association_id).update_attribute cache_column, block.call(self)
-        # find association foreign_key, see if it's been changed
-        # if it has, also update counter cache on old association
+    
+    def define_counter_cache(cache_column, &block)
+      # counter accessors
+      unless column_names.include?(cache_column) # Object.const_defined?(:Counter)
+        has_many :counters, :as => :countable, :dependent => :destroy
+        define_method "#{cache_column}" do
+          counters.find(:first, :conditions => { :key => cache_column.to_s }).value rescue 0
+        end
+        define_method "#{cache_column}=" do |count|
+          if ( counter = counters.find(:first, :conditions => { :key => cache_column.to_s }) )
+            counter.update_attribute :value, count.to_i
+          else
+            counters.create :key => cache_column.to_s, :value => count.to_i
+          end
+        end
       end
-      after_save    method_name
-      after_destroy method_name
+      # counter update method
+      define_method "update_#{cache_column}" do
+        update_attribute cache_column, block.call(self)
+      end
     end
+    
+    def update_counter_cache(association_id, cache_column, options = {}) 
+      association_id = association_id.to_sym
+      cache_column   = cache_column.to_sym
+      method_name    = "callback_#{cache_column}".to_sym
+      reflection     = reflect_on_association(association_id)
+      # define callback
+      define_method method_name do
+        # update old association
+        if send("#{reflection.association_foreign_key}_changed?")
+          old_assoc_id = send("#{reflection.association_foreign_key}_was")
+          if ( old_assoc_id && old_assoc = reflection.klass.find(old_assoc_id))
+            old_assoc.send("update_#{cache_column}")
+          end
+        end
+        # update new association
+        new_assoc_id = send(reflection.association_foreign_key)
+        if ( new_assoc_id && new_assoc = reflection.klass.find(new_assoc_id) )
+          new_assoc.send("update_#{cache_column}")
+        end
+      end
+      # set callbacks
+      after_save    method_name, :if => options.delete(:if)
+      after_destroy method_name, :if => options.delete(:if)
+    end
+    
   end
   
 end
