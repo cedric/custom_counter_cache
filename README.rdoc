@@ -24,11 +24,13 @@ This is the block that will be used to calculate the value for the counter cache
 
 == Class with callbacks
 
-This will define the after_save and after_destroy callbacks. An :if option can be provided to limit when these callbacks get triggered.
+This will define the after_create, after_update and after_destroy callbacks. An :if option can be provided to limit when these callbacks get triggered.
 
   update_counter_cache :user, :articles_count, :if => Proc.new { |article| article.state_changed? }
 
-== Database
+These callbacks can be added to any number of models that might need to change the counter cache.
+
+== Counter Cache
 
 To store the counter cache you need to create a column for the model with the counter cache (example: articles_count). If you would like to store all of your counter caches in a single table, you can use this migration:
 
@@ -46,10 +48,6 @@ Here is the example model to go with:
     belongs_to :countable, :polymorphic => true
     validates_presence_of :countable
   end
-
-=== To Do
-
-Write some tests. Ack!
 
 === License
 
