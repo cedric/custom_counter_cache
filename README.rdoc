@@ -40,6 +40,13 @@ To store the counter cache you need to create a column for the model with the co
   end
   add_index :counters, [ :countable_id, :countable_type, :key ], :unique => true
 
+Here is the example model to go with:
+
+  class Counter < ActiveRecord::Base
+    belongs_to :countable, :polymorphic => true
+    validates_presence_of :countable
+  end
+
 === To Do
 
 Write some tests. Ack!
