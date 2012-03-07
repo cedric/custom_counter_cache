@@ -32,17 +32,18 @@ module CustomCounterCache::Model
       cache_column   = cache_column.to_sym
       method_name    = "callback_#{cache_column}".to_sym
       reflection     = reflect_on_association(association_id)
+      foreign_key    = reflection.options[:foreign_key] || reflection.association_foreign_key
       # define callback
       define_method method_name do
         # update old association
-        if send("#{reflection.association_foreign_key}_changed?")
-          old_assoc_id = send("#{reflection.association_foreign_key}_was")
+        if send("#{foreign_key}_changed?")
+          old_assoc_id = send("#{foreign_key}_was")
           if ( old_assoc_id && old_assoc = reflection.klass.find(old_assoc_id))
             old_assoc.send("update_#{cache_column}")
           end
         end
         # update new association
-        new_assoc_id = send(reflection.association_foreign_key)
+        new_assoc_id = send(foreign_key)
         if ( new_assoc_id && new_assoc = reflection.klass.find(new_assoc_id) )
           new_assoc.send("update_#{cache_column}")
         end
