@@ -7,25 +7,25 @@ class CounterTest < Test::Unit::TestCase
   end
   
   def test_default_counter_value
-    assert @user.published_count, 0
+    assert_equal 0, @user.published_count
   end
   
   def test_create_and_destroy_counter
     @user.articles.create(:state => 'published')
-    assert Counter.count, 1
+    assert_equal 1, Counter.count
     @user.articles.delete_all
-    assert Counter.count, 0
+    assert_equal 0, Counter.count
   end
   
   def test_increment_and_decrement_counter_with_conditions
     @article = @user.articles.create(:state => 'unpublished')
-    assert @user.published_count, 0
+    assert_equal 0, @user.published_count
     @article.update_attribute :state, 'published'
-    assert @user.published_count, 1
+    assert_equal 1, @user.published_count
     3.times { |i| @user.articles.create(:state => 'published') }
-    assert @user.published_count, 4
+    assert_equal 4, @user.published_count
     @user.articles.update_all "state = 'unpublished'"
-    assert @user.published_count, 0
+    assert_equal 0, @user.published_count
   end
   
 end
