@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 lib = File.expand_path('../lib/', __FILE__)
 $:.unshift lib unless $:.include?(lib)
-require 'lib/custom_counter_cache/version'
+require 'custom_counter_cache/version'
 
 spec = Gem::Specification.new do |s|
   s.name = 'custom_counter_cache'
@@ -16,6 +16,8 @@ spec = Gem::Specification.new do |s|
   s.files = Dir['lib/**/*.rb']
   s.required_rubygems_version = '>= 1.3.6'
   s.add_dependency('rails', '>= 2.3')
+  s.add_development_dependency('sqlite3-ruby')
+  s.add_development_dependency('debugger')
   s.test_files = Dir['test/**/*.rb']
   s.rubyforge_project = 'custom_counter_cache'
   s.has_rdoc = true
