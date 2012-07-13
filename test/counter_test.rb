@@ -13,7 +13,7 @@ class CounterTest < Test::Unit::TestCase
   def test_create_and_destroy_counter
     @user.articles.create(:state => 'published')
     assert_equal 1, Counter.count
-    @user.articles.delete_all
+    @user.destroy
     assert_equal 0, Counter.count
   end
   
@@ -24,8 +24,10 @@ class CounterTest < Test::Unit::TestCase
     assert_equal 1, @user.published_count
     3.times { |i| @user.articles.create(:state => 'published') }
     assert_equal 4, @user.published_count
-    @user.articles.update_all "state = 'unpublished'"
+    @user.articles.each {|a| a.update_attributes(:state => 'unpublished') }
     assert_equal 0, @user.published_count
   end
+
+  # Test that an eager loaded
   
 end
