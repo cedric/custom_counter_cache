@@ -11,7 +11,12 @@ module CustomCounterCache::Model
       unless column_names.include?(cache_column) # Object.const_defined?(:Counter)
         has_many :counters, :as => :countable, :dependent => :destroy
         define_method "#{cache_column}" do
-          counters.find(:first, :conditions => { :key => cache_column.to_s }).value rescue 0
+          # Check if the counter is already loaded (e.g. eager-loaded)
+          if counters.loaded? && counter = counters.detect{|c| c.key == cache_column.to_s }
+            counter.value
+          else
+            counters.find(:first, :conditions => { :key => cache_column.to_s }).value rescue 0
+          end
         end
         define_method "#{cache_column}=" do |count|
           if ( counter = counters.find(:first, :conditions => { :key => cache_column.to_s }) )
