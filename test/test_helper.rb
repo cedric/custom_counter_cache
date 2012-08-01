@@ -1,13 +1,9 @@
-$: << File.join(File.dirname(__FILE__), '..', 'lib')
-$: << File.join(File.dirname(__FILE__))
-
 require 'rubygems'
 require 'test/unit'
 require 'sqlite3'
 require 'action_view'
 require 'active_record'
 require 'custom_counter_cache'
-require 'ruby-debug'
 
 ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => ':memory:')
 
