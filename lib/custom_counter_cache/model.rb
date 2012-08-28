@@ -32,25 +32,29 @@ module CustomCounterCache::Model
       end
     end
     
-    def update_counter_cache(association_id, cache_column, options = {}) 
-      association_id = association_id.to_sym
-      cache_column   = cache_column.to_sym
-      method_name    = "callback_#{cache_column}".to_sym
-      reflection     = reflect_on_association(association_id)
-      foreign_key    = reflection.options[:foreign_key] || reflection.association_foreign_key
+    def update_counter_cache(association, cache_column, options = {})
+      association  = association.to_sym
+      cache_column = cache_column.to_sym
+      method_name  = "callback_#{cache_column}".to_sym
+      reflection   = reflect_on_association(association)
+      foreign_key  = reflection.options[:foreign_key] || reflection.association_foreign_key
       # define callback
       define_method method_name do
         # update old association
-        if send("#{foreign_key}_changed?")
-          old_assoc_id = send("#{foreign_key}_was")
-          if ( old_assoc_id && old_assoc = reflection.klass.find(old_assoc_id))
-            old_assoc.send("update_#{cache_column}")
+        if send("#{foreign_key}_changed?") || ( !respond_to?("#{association}_type") || send("#{association}_type_changed?") )
+          old_id = send("#{foreign_key}_was")
+          klass = if reflection.options[:polymorphic]
+            ( send("#{association}_type_was") || send("#{association}_type") ).constantize
+          else
+            reflection.klass
+          end
+          if ( old_id && record = klass.find(old_id) )
+            record.send("update_#{cache_column}")
           end
         end
         # update new association
-        new_assoc_id = send(foreign_key)
-        if ( new_assoc_id && new_assoc = reflection.klass.find(new_assoc_id) )
-          new_assoc.send("update_#{cache_column}")
+        if ( record = send(association) )
+          record.send("update_#{cache_column}")
         end
       end
       # set callbacks
