@@ -1,4 +1,3 @@
-# status images
 {<img src="https://badge.fury.io/rb/custom_counter_cache.png" alt="Gem Version" />}[http://badge.fury.io/rb/custom_counter_cache]
 {<img src="https://secure.travis-ci.org/cedric/custom_counter_cache.png?branch=master" alt="Build Status" />}[https://travis-ci.org/cedric/custom_counter_cache]
 
