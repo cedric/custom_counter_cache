@@ -22,14 +22,14 @@ If using Bundler, add the following to your Gemfile:
 This is the block that will be used to calculate the value for the counter cache. It will be called by other models through their association via an after_save or after_destroy callback.
 
   define_counter_cache :articles_count do |user|
-    user.articles.count(:conditions => "articles.state = 'published'")
+    user.articles.where(state: 'published').count
   end
 
 == Class with callbacks
 
 This will define the after_create, after_update and after_destroy callbacks. An :if option can be provided to limit when these callbacks get triggered.
 
-  update_counter_cache :user, :articles_count, :if => Proc.new { |article| article.state_changed? }
+  update_counter_cache :user, :articles_count, if: proc { |article| article.state_changed? }
 
 These callbacks can be added to any number of models that might need to change the counter cache.
 
@@ -38,18 +38,18 @@ These callbacks can be added to any number of models that might need to change t
 To store the counter cache you need to create a column for the model with the counter cache (example: articles_count). If you would like to store all of your counter caches in a single table, you can use this migration:
 
   create_table :counters do |t|
-    t.references :countable, :polymorphic => true
-    t.string :key, :null => false
-    t.integer :value, :null => false, :default => 0
+    t.references :countable, polymorphic: true
+    t.string :key, null: false
+    t.integer :value, null: false, default: 0
     t.timestamps
   end
-  add_index :counters, [ :countable_id, :countable_type, :key ], :unique => true
+  add_index :counters, [ :countable_id, :countable_type, :key ], unique: true
 
 Here is the example model to go with:
 
   class Counter < ActiveRecord::Base
-    belongs_to :countable, :polymorphic => true
-    validates_presence_of :countable
+    belongs_to :countable, polymorphic: true
+    validates :countable, presence: true
   end
 
 === License
