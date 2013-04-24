@@ -1,11 +1,11 @@
 module CustomCounterCache::Model
-  
+
   def self.included(base)
     base.extend ActsAsMethods
   end
-  
+
   module ActsAsMethods
-    
+
     def define_counter_cache(cache_column, &block)
       # counter accessors
       unless column_names.include?(cache_column) # Object.const_defined?(:Counter)
@@ -28,10 +28,10 @@ module CustomCounterCache::Model
       end
       # counter update method
       define_method "update_#{cache_column}" do
-        update_attribute cache_column, block.call(self)
+        send "#{cache_column}=", block.call(self)
       end
     end
-    
+
     def update_counter_cache(association, cache_column, options = {})
       association  = association.to_sym
       cache_column = cache_column.to_sym
@@ -62,9 +62,9 @@ module CustomCounterCache::Model
       after_update  method_name, :if => options[:if]
       after_destroy method_name, :if => options[:if]
     end
-    
+
   end
-  
+
 end
 
 ActiveRecord::Base.send :include, CustomCounterCache::Model

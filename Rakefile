@@ -1,4 +1,5 @@
-$LOAD_PATH.unshift File.expand_path('../lib', __FILE__)
+# -*- encoding: utf-8 -*-
+$LOAD_PATH << File.dirname(__FILE__)
 require 'rake/testtask'
 require 'lib/custom_counter_cache/version'
 
