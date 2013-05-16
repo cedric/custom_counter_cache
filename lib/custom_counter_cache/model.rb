@@ -58,9 +58,9 @@ module CustomCounterCache::Model
         end
       end
       # set callbacks
-      after_create  method_name
-      after_update  method_name, :if => options[:if]
-      after_destroy method_name, :if => options[:if]
+      after_create  method_name, options
+      after_update  method_name, options
+      after_destroy method_name, options
     end
 
   end
