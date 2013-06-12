@@ -34,6 +34,7 @@ module CustomCounterCache::Model
     end
 
     def update_counter_cache(association, cache_column, options = {})
+      return unless table_exists?
       association  = association.to_sym
       cache_column = cache_column.to_sym
       method_name  = "callback_#{cache_column}".to_sym
