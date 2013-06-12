@@ -7,6 +7,7 @@ module CustomCounterCache::Model
   module ActsAsMethods
 
     def define_counter_cache(cache_column, &block)
+      return unless table_exists?
       # counter accessors
       unless column_names.include?(cache_column) # Object.const_defined?(:Counter)
         has_many :counters, :as => :countable, :dependent => :destroy
