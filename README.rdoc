@@ -29,7 +29,7 @@ This is the block that will be used to calculate the value for the counter cache
 
 This will define the after_create, after_update and after_destroy callbacks. An :if option can be provided to limit when these callbacks get triggered.
 
-  update_counter_cache :user, :articles_count, if: proc { |article| article.state_changed? }
+  update_counter_cache :user, :articles_count, if: -> (article) { article.state_changed? }
 
 These callbacks can be added to any number of models that might need to change the counter cache.
 
