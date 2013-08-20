@@ -25,7 +25,7 @@ end
 class User < ActiveRecord::Base
   has_many :articles
   define_counter_cache :published_count do |user|
-    user.articles.count(:conditions => { :articles => { :state => 'published' } })
+    user.articles.where(:articles => { :state => 'published' }).count
   end
 end
 
