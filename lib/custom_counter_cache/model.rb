@@ -29,7 +29,7 @@ module CustomCounterCache::Model
       end
       # counter update method
       define_method "update_#{cache_column}" do
-        send "#{cache_column}=", block.call(self)
+        update_attribute cache_column, block.call(self)
       end
     end
 
