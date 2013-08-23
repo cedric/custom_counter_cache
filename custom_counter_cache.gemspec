@@ -18,5 +18,4 @@ spec = Gem::Specification.new do |s|
   s.add_development_dependency('sqlite3')
   s.test_files = Dir['test/**/*.rb']
   s.rubyforge_project = 'custom_counter_cache'
-  s.has_rdoc = true
 end
