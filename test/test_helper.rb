@@ -20,6 +20,14 @@ ActiveRecord::Schema.define(:version => 1) do
     t.integer :value, :null => false, :default => 0
   end
   add_index :counters, [ :countable_id, :countable_type, :key ], :unique => true
+  
+  create_table :boxes do |t|
+    t.integer :green_balls_count, default: 0
+  end
+  create_table :balls do |t|
+    t.belongs_to :box
+    t.string :color, :default => 'red'
+  end
 end
 
 class User < ActiveRecord::Base
@@ -36,4 +44,17 @@ end
 
 class Counter < ActiveRecord::Base
   belongs_to :countable, :polymorphic => true
+end
+
+class Box < ActiveRecord::Base
+  has_many :balls
+  define_counter_cache :green_balls_count do |box|
+    box.balls.green.count
+  end
+end
+
+class Ball < ActiveRecord::Base
+  belongs_to :box
+  scope :green, -> { where(color: 'green') }
+  update_counter_cache :box, :green_balls_count, :if => Proc.new { |ball| ball.color_changed? }
 end
