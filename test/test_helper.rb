@@ -22,7 +22,7 @@ ActiveRecord::Schema.define(:version => 1) do
   add_index :counters, [ :countable_id, :countable_type, :key ], :unique => true
 
   create_table :boxes do |t|
-    t.integer :green_balls_count, default: 0
+    t.integer :green_balls_count, :default => 0
   end
   create_table :balls do |t|
     t.belongs_to :box
