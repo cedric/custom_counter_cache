@@ -31,7 +31,7 @@ module CustomCounterCache::Model
 
       # counter update method
       define_method "update_#{cache_column}" do
-        if column_names.include?(cache_column.to_s)
+        if self.class.column_names.include?(cache_column.to_s)
           update_attribute cache_column, block.call(self)
         else
           send "#{cache_column}=", block.call(self)
