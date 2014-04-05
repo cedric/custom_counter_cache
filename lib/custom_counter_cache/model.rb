@@ -8,6 +8,7 @@ module CustomCounterCache::Model
 
     def define_counter_cache(cache_column, &block)
       return unless table_exists?
+
       # counter accessors
       unless column_names.include?(cache_column.to_s)
         has_many :counters, :as => :countable, :dependent => :destroy
@@ -27,19 +28,26 @@ module CustomCounterCache::Model
           end
         end
       end
+
       # counter update method
       define_method "update_#{cache_column}" do
-        update_attribute cache_column, block.call(self)
+        if self.class.column_names.include?(cache_column.to_s)
+          update_attribute cache_column, block.call(self)
+        else
+          send "#{cache_column}=", block.call(self)
+        end
       end
     end
 
     def update_counter_cache(association, cache_column, options = {})
       return unless table_exists?
+
       association  = association.to_sym
       cache_column = cache_column.to_sym
       method_name  = "callback_#{cache_column}".to_sym
       reflection   = reflect_on_association(association)
       foreign_key  = reflection.options[:foreign_key] || reflection.association_foreign_key
+
       # define callback
       define_method method_name do
         # update old association
@@ -59,6 +67,7 @@ module CustomCounterCache::Model
           record.send("update_#{cache_column}")
         end
       end
+
       # set callbacks
       after_create  method_name, options
       after_update  method_name, options
