@@ -35,7 +35,7 @@ class CounterTest < Test::Unit::TestCase
     assert_equal 0, @box.reload.green_balls_count
     @ball.update_attribute :color, 'green'
     assert_equal 1, @box.reload.green_balls_count
-    3.times { |i| @box.balls.create(color: 'green') }
+    3.times { |i| @box.balls.create(:color => 'green') }
     assert_equal 4, @box.reload.green_balls_count
     @box.balls.each {|b| b.update_attributes(:color => 'red') }
     assert_equal 0, @box.reload.green_balls_count

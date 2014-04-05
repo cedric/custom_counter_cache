@@ -20,7 +20,7 @@ ActiveRecord::Schema.define(:version => 1) do
     t.integer :value, :null => false, :default => 0
   end
   add_index :counters, [ :countable_id, :countable_type, :key ], :unique => true
-  
+
   create_table :boxes do |t|
     t.integer :green_balls_count, default: 0
   end
@@ -55,6 +55,6 @@ end
 
 class Ball < ActiveRecord::Base
   belongs_to :box
-  scope :green, -> { where(color: 'green') }
+  scope :green, lambda { where(:color => 'green') }
   update_counter_cache :box, :green_balls_count, :if => Proc.new { |ball| ball.color_changed? }
 end
