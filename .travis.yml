@@ -7,14 +7,18 @@ rvm:
   - 2.1.0
   - 2.1.1
 gemfile:
+  - test/gemfiles/rails-3.1
   - test/gemfiles/rails-3.2
   - test/gemfiles/rails-4.0
 matrix:
   exclude:
     - { rvm: 1.8.7, gemfile: test/gemfiles/rails-4.0 }
     - { rvm: 1.9.2, gemfile: test/gemfiles/rails-4.0 }
+    - { rvm: 2.0.0, gemfile: test/gemfiles/rails-3.1 }
     - { rvm: 2.0.0, gemfile: test/gemfiles/rails-3.2 }
+    - { rvm: 2.1.0, gemfile: test/gemfiles/rails-3.1 }
     - { rvm: 2.1.0, gemfile: test/gemfiles/rails-3.2 }
+    - { rvm: 2.1.1, gemfile: test/gemfiles/rails-3.1 }
     - { rvm: 2.1.1, gemfile: test/gemfiles/rails-3.2 }
 notifications:
   recipients:
