@@ -4,10 +4,12 @@ class CounterTest < Test::Unit::TestCase
 
   def setup
     @user = User.create
+    @box = Box.create
   end
 
   def test_default_counter_value
     assert_equal 0, @user.published_count
+    assert_equal 0, @box.green_balls_count
   end
 
   def test_create_and_destroy_counter
@@ -26,6 +28,17 @@ class CounterTest < Test::Unit::TestCase
     assert_equal 4, @user.published_count
     @user.articles.each {|a| a.update_attributes(:state => 'unpublished') }
     assert_equal 0, @user.published_count
+  end
+
+  def test_increment_and_decrement_counter_with_conditions_on_model_with_counter_column
+    @ball = @box.balls.create(:color => 'red')
+    assert_equal 0, @box.reload.green_balls_count
+    @ball.update_attribute :color, 'green'
+    assert_equal 1, @box.reload.green_balls_count
+    3.times { |i| @box.balls.create(:color => 'green') }
+    assert_equal 4, @box.reload.green_balls_count
+    @box.balls.each {|b| b.update_attributes(:color => 'red') }
+    assert_equal 0, @box.reload.green_balls_count
   end
 
   # Test that an eager loaded
