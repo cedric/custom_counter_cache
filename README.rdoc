@@ -36,7 +36,9 @@ These callbacks can be added to any number of models that might need to change t
 
 == Counter Cache
 
-To store the counter cache you need to create a column for the model with the counter cache (example: articles_count). If you would like to store all of your counter caches in a single table, you can use this migration:
+To store the counter cache you need to create a column for the model with the counter cache (example: articles_count).
+
+If you would like to store all of your counter caches in a single table, you can use this migration:
 
   create_table :counters do |t|
     t.references :countable, polymorphic: true
@@ -52,6 +54,16 @@ Here is the example model to go with:
     belongs_to :countable, polymorphic: true
     validates :countable, presence: true
   end
+
+If you would like to store your counter cache in an existing table, you can use this migration:
+
+  def change
+    add_column :users, :articles_count, :integer, default: 0, null: false
+  end
+
+To backfill your counters, run something like this either in a migration or in the console:
+
+  User.select(:id).find_each(batch_size: 100) { |u| u.update_articles_count }
 
 === License
 
