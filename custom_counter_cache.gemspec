@@ -2,7 +2,7 @@
 $LOAD_PATH << File.dirname(__FILE__) + '/lib'
 require 'custom_counter_cache/version'
 
-spec = Gem::Specification.new do |s|
+Gem::Specification.new do |s|
   s.name = 'custom_counter_cache'
   s.version = CustomCounterCache::VERSION
   s.platform = Gem::Platform::RUBY
