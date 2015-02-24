@@ -17,11 +17,11 @@ module CustomCounterCache::Model
           if counters.loaded? && counter = counters.detect{|c| c.key == cache_column.to_s }
             counter.value
           else
-            counters.where(:key => cache_column.to_s).first.try(:value).to_i
+            counters.find_by_key(cache_column.to_s).try(:value).to_i
           end
         end
         define_method "#{cache_column}=" do |count|
-          if ( counter = counters.where(:key => cache_column.to_s).first )
+          if ( counter = counters.find_by_key(cache_column.to_s) )
             counter.update_attribute :value, count.to_i
           else
             counters.create :key => cache_column.to_s, :value => count.to_i
