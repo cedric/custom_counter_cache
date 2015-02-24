@@ -1,10 +1,11 @@
 require File.join(File.dirname(__FILE__), 'test_helper')
 
-class CounterTest < Test::Unit::TestCase
+class CounterTest < MiniTest::Unit::TestCase
 
   def setup
     @user = User.create
     @box = Box.create
+    Counter.destroy_all
   end
 
   def test_default_counter_value
