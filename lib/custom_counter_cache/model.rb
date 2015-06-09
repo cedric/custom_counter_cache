@@ -51,7 +51,7 @@ module CustomCounterCache::Model
       # define callback
       define_method method_name do
         # update old association
-        if send("#{foreign_key}_changed?") || ( !respond_to?("#{association}_type") || send("#{association}_type_changed?") )
+        if send("#{foreign_key}_changed?") || ( reflection.options[:polymorphic] && send("#{association}_type_changed?") )
           old_id = send("#{foreign_key}_was")
           klass = if reflection.options[:polymorphic]
             ( send("#{association}_type_was") || send("#{association}_type") ).constantize
