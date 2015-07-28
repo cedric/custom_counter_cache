@@ -1,11 +1,9 @@
+require 'active_support/concern'
+
 module CustomCounterCache::Model
+  extend ActiveSupport::Concern
 
-  def self.included(base)
-    base.extend ActsAsMethods
-  end
-
-  module ActsAsMethods
-
+  module ClassMethods
     def define_counter_cache(cache_column, &block)
       return unless table_exists?
 
@@ -73,9 +71,7 @@ module CustomCounterCache::Model
       after_update  method_name, options
       after_destroy method_name, options
     end
-
   end
-
 end
 
 ActiveRecord::Base.send :include, CustomCounterCache::Model
