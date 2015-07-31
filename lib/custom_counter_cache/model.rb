@@ -44,7 +44,7 @@ module CustomCounterCache::Model
       cache_column = cache_column.to_sym
       method_name  = "callback_#{cache_column}".to_sym
       reflection   = reflect_on_association(association)
-      foreign_key  = reflection.try(:foreign_key) || reflection.options[:foreign_key] || reflection.association_foreign_key
+      foreign_key  = reflection.try(:foreign_key) || reflection.association_foreign_key
 
       # define callback
       define_method method_name do
