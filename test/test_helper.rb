@@ -10,10 +10,18 @@ ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => ':me
 ActiveRecord::Schema.define(:version => 1) do
   create_table :users do |t|
   end
+
   create_table :articles do |t|
     t.belongs_to :user
     t.string :state, :default => 'unpublished'
   end
+
+  create_table :comments do |t|
+    t.belongs_to :user
+    t.references :commentable, polymorphic: true
+    t.string :state, default: "unpublished"
+  end
+
   create_table :counters do |t|
     t.references :countable, :polymorphic => true
     t.string :key, :null => false
@@ -24,6 +32,7 @@ ActiveRecord::Schema.define(:version => 1) do
   create_table :boxes do |t|
     t.integer :green_balls_count, :default => 0
   end
+
   create_table :balls do |t|
     t.belongs_to :box
     t.string :color, :default => 'red'
@@ -31,7 +40,7 @@ ActiveRecord::Schema.define(:version => 1) do
 end
 
 class User < ActiveRecord::Base
-  has_many :articles
+  has_many :articles, dependent: :destroy
   define_counter_cache :published_count do |user|
     user.articles.where(:articles => { :state => 'published' }).count
   end
@@ -40,6 +49,15 @@ end
 class Article < ActiveRecord::Base
   belongs_to :user
   update_counter_cache :user, :published_count, :if => Proc.new { |article| article.state_changed? }
+  has_many :comments, as: :commentable, dependent: :destroy
+  define_counter_cache :comments_count do |article|
+    article.comments.where(state: "published").count
+  end
+end
+
+class Comment < ActiveRecord::Base
+  belongs_to :commentable, polymorphic: true
+  update_counter_cache :commentable, :comments_count, if: Proc.new { |comment| comment.state_changed? }
 end
 
 class Counter < ActiveRecord::Base

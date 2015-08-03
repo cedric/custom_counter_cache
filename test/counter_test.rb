@@ -20,6 +20,15 @@ class CounterTest < MiniTest::Unit::TestCase
     assert_equal 0, Counter.count
   end
 
+  def test_create_and_destroy_polymorphic_association_counter
+    @article = @user.articles.create(state: "published")
+    assert_equal 0, @article.comments.size
+    @comment = @article.comments.create(state: "published")
+    assert_equal 1, @article.comments.size
+    @article.destroy
+    assert_equal 0, @article.comments.size
+  end
+
   def test_increment_and_decrement_counter_with_conditions
     @article = @user.articles.create(:state => 'unpublished')
     assert_equal 0, @user.published_count
@@ -29,6 +38,18 @@ class CounterTest < MiniTest::Unit::TestCase
     assert_equal 4, @user.published_count
     @user.articles.each {|a| a.update_attributes(:state => 'unpublished') }
     assert_equal 0, @user.published_count
+  end
+
+  def test_increment_and_decrement_polymorphic_counter_with_conditions
+    @article = @user.articles.create(state: "published")
+    @comment = @article.comments.create(state: "unpublished")
+    assert_equal 0, @article.comments_count
+    @comment.update_attribute :state, "published"
+    assert_equal 1, @article.comments_count
+    3.times { |i| @article.comments.create(state: "published") }
+    assert_equal 4, @article.comments_count
+    @article.comments.each { |c| c.update_attributes(state: "unpublished") }
+    assert_equal 0, @article.comments_count
   end
 
   def test_increment_and_decrement_counter_with_conditions_on_model_with_counter_column
