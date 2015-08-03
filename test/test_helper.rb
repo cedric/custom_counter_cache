@@ -5,15 +5,15 @@ require 'action_view'
 require 'active_record'
 require 'custom_counter_cache'
 
-ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => ':memory:')
+ActiveRecord::Base.establish_connection(adapter: 'sqlite3', database: ':memory:')
 
-ActiveRecord::Schema.define(:version => 1) do
+ActiveRecord::Schema.define(version: 1) do
   create_table :users do |t|
   end
 
   create_table :articles do |t|
     t.belongs_to :user
-    t.string :state, :default => 'unpublished'
+    t.string :state, default: 'unpublished'
   end
 
   create_table :comments do |t|
@@ -23,32 +23,32 @@ ActiveRecord::Schema.define(:version => 1) do
   end
 
   create_table :counters do |t|
-    t.references :countable, :polymorphic => true
-    t.string :key, :null => false
-    t.integer :value, :null => false, :default => 0
+    t.references :countable, polymorphic: true
+    t.string :key, null: false
+    t.integer :value, null: false, default: 0
   end
-  add_index :counters, [ :countable_id, :countable_type, :key ], :unique => true
+  add_index :counters, [ :countable_id, :countable_type, :key ], unique: true
 
   create_table :boxes do |t|
-    t.integer :green_balls_count, :default => 0
+    t.integer :green_balls_count, default: 0
   end
 
   create_table :balls do |t|
     t.belongs_to :box
-    t.string :color, :default => 'red'
+    t.string :color, default: 'red'
   end
 end
 
 class User < ActiveRecord::Base
   has_many :articles, dependent: :destroy
   define_counter_cache :published_count do |user|
-    user.articles.where(:articles => { :state => 'published' }).count
+    user.articles.where(articles: { state: 'published' }).count
   end
 end
 
 class Article < ActiveRecord::Base
   belongs_to :user
-  update_counter_cache :user, :published_count, :if => Proc.new { |article| article.state_changed? }
+  update_counter_cache :user, :published_count, if: Proc.new { |article| article.state_changed? }
   has_many :comments, as: :commentable, dependent: :destroy
   define_counter_cache :comments_count do |article|
     article.comments.where(state: "published").count
@@ -61,7 +61,7 @@ class Comment < ActiveRecord::Base
 end
 
 class Counter < ActiveRecord::Base
-  belongs_to :countable, :polymorphic => true
+  belongs_to :countable, polymorphic: true
 end
 
 class Box < ActiveRecord::Base
@@ -73,6 +73,6 @@ end
 
 class Ball < ActiveRecord::Base
   belongs_to :box
-  scope :green, lambda { where(:color => 'green') }
-  update_counter_cache :box, :green_balls_count, :if => Proc.new { |ball| ball.color_changed? }
+  scope :green, lambda { where(color: 'green') }
+  update_counter_cache :box, :green_balls_count, if: Proc.new { |ball| ball.color_changed? }
 end
