@@ -69,7 +69,7 @@ To backfill your counters, run something like this either in a migration or in t
 
 (The MIT License)
 
-Copyright (c) 2011-2014 Cedric Howe
+Copyright (c) 2011-2015 Cedric Howe
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
