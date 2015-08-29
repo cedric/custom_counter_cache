@@ -7,6 +7,20 @@ module CustomCounterCache::Model
     def define_counter_cache(cache_column, &block)
       return unless table_exists?
 
+      # counter update method
+      define_method "update_#{cache_column}" do
+        if self.class.column_names.include?(cache_column.to_s)
+          update_attribute cache_column, block.call(self)
+        else
+          send "#{cache_column}=", block.call(self)
+        end
+      end
+
+      if column_names.exclude?(cache_column.to_s) && ActiveRecord::Base.connection.tables.exclude?('counters')
+        attr_accessor cache_column
+        return
+      end
+
       # counter accessors
       unless column_names.include?(cache_column.to_s)
         has_many :counters, as: :countable, dependent: :destroy
@@ -24,15 +38,6 @@ module CustomCounterCache::Model
           else
             counters.create key: cache_column.to_s, value: count.to_i
           end
-        end
-      end
-
-      # counter update method
-      define_method "update_#{cache_column}" do
-        if self.class.column_names.include?(cache_column.to_s)
-          update_attribute cache_column, block.call(self)
-        else
-          send "#{cache_column}=", block.call(self)
         end
       end
     end
