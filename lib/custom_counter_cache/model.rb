@@ -56,7 +56,7 @@ module CustomCounterCache::Model
           else
             reflection.klass
           end
-          if ( old_id && record = klass.find(old_id) )
+          if ( old_id && record = klass.find_by(id: old_id) )
             record.send("update_#{cache_column}")
           end
         end
