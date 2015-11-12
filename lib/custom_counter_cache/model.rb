@@ -35,6 +35,10 @@ module CustomCounterCache::Model
           send "#{cache_column}=", block.call(self)
         end
       end
+
+    rescue StandardError => e
+      # Support Heroku's database-less assets:precompile pre-deploy step:
+      raise e unless ENV['DATABASE_URL'].to_s.include?('//user:pass@127.0.0.1/')
     end
 
     def update_counter_cache(association, cache_column, options = {})
@@ -70,6 +74,10 @@ module CustomCounterCache::Model
       after_create  method_name, options
       after_update  method_name, options
       after_destroy method_name, options
+
+    rescue StandardError => e
+      # Support Heroku's database-less assets:precompile pre-deploy step:
+      raise e unless ENV['DATABASE_URL'].to_s.include?('//user:pass@127.0.0.1/')
     end
   end
 end
