@@ -10,20 +10,20 @@ module CustomCounterCache::Model
       return unless table_exists?
       # counter accessors
       unless column_names.include?(cache_column.to_s)
-        has_many :counters, :as => :countable, :dependent => :destroy
+        has_many :counters, as: :countable, dependent: :destroy
         define_method "#{cache_column}" do
           # check if the counter is loaded
           if counters.loaded? && counter = counters.detect{|c| c.key == cache_column.to_s }
             counter.value
           else
-            counters.where(:key => cache_column.to_s).first.try(:value).to_i
+            counters.where(key: cache_column.to_s).first.try(:value).to_i
           end
         end
         define_method "#{cache_column}=" do |count|
-          if ( counter = counters.where(:key => cache_column.to_s).first )
+          if ( counter = counters.where(key: cache_column.to_s).first )
             counter.update_attribute :value, count.to_i
           else
-            counters.create :key => cache_column.to_s, :value => count.to_i
+            counters.create key: cache_column.to_s, value: count.to_i
           end
         end
       end

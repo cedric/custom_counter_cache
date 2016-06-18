@@ -13,12 +13,12 @@ namespace :gem do
   end
 
   desc 'Build gem.'
-  task :build => :test do
+  task build: :test do
     system "gem build custom_counter_cache.gemspec"
   end
 
   desc 'Build, tag and push gem.'
-  task :release => :build do
+  task release: :build do
     # tag and push
     system "git tag v#{CustomCounterCache::VERSION}"
     system "git push origin --tags"
@@ -28,4 +28,4 @@ namespace :gem do
 
 end
 
-task :default => 'gem:test'
+task default:'gem:test'
