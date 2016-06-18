@@ -1,5 +1,5 @@
 require 'rubygems'
-require 'test/unit'
+require "minitest/autorun"
 require 'sqlite3'
 require 'action_view'
 require 'active_record'

@@ -1,6 +1,6 @@
 require File.join(File.dirname(__FILE__), 'test_helper')
 
-class CounterTest < Test::Unit::TestCase
+class CounterTest < Minitest::Test
 
   def setup
     @user = User.create
