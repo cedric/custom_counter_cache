@@ -3,7 +3,6 @@ rvm:
   - 2.0
   - 2.1
   - 2.2
-  - 2.3
 gemfile:
   - test/gemfiles/rails-4.0
   - test/gemfiles/rails-4.1
