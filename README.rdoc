@@ -4,15 +4,11 @@
 
 == Custom Counter Cache
 
-This is a simple approach to creating a custom counter cache that can be used across multiple models.
+This is a simple approach to creating a custom counter cache in Rails that can be used across multiple models.
 
 === Installation
 
-In Rails 2.3, add the following to your environment.rb:
-
-  config.gem 'custom_counter_cache'
-
-If using Bundler, add the following to your Gemfile:
+Add the following to your Gemfile:
 
   gem 'custom_counter_cache'
 
