@@ -1,3 +1,4 @@
 .rbenv-version
+.ruby-version
 .rvmrc
 *.gem
