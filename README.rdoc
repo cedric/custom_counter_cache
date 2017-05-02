@@ -18,6 +18,7 @@ Add the following to your Gemfile:
 
 This is the block that will be used to calculate the value for the counter cache. It will be called by other models through their association via an after_save or after_destroy callback.
 
+  include CustomCounterCache::Model
   define_counter_cache :articles_count do |user|
     user.articles.where(state: 'published').count
   end
@@ -26,6 +27,7 @@ This is the block that will be used to calculate the value for the counter cache
 
 This will define the after_create, after_update and after_destroy callbacks. An :if option can be provided to limit when these callbacks get triggered.
 
+  include CustomCounterCache::Model
   update_counter_cache :user, :articles_count, if: -> (article) { article.state_changed? }
 
 These callbacks can be added to any number of models that might need to change the counter cache.
@@ -65,7 +67,7 @@ To backfill your counters, run something like this either in a migration or in t
 
 (The MIT License)
 
-Copyright (c) 2011-2015 Cedric Howe
+Copyright (c) 2011-2017 Cedric Howe
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
