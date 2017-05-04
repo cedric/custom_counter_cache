@@ -20,7 +20,7 @@ module CustomCounterCache::Model
         end
         define_method "#{cache_column}=" do |count|
           if ( counter = counters.find_by_key(cache_column.to_s) )
-            counter.update_attribute :value, count.to_i
+            counter.update_column :value, count.to_i
           else
             counters.create key: cache_column.to_s, value: count.to_i
           end
@@ -30,7 +30,7 @@ module CustomCounterCache::Model
       # counter update method
       define_method "update_#{cache_column}" do
         if self.class.column_names.include?(cache_column.to_s)
-          update_attribute cache_column, block.call(self)
+          update_column cache_column, block.call(self)
         else
           send "#{cache_column}=", block.call(self)
         end
