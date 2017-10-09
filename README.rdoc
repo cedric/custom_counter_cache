@@ -1,6 +1,6 @@
-{<img src="https://badge.fury.io/rb/custom_counter_cache.png" alt="Gem Version" />}[http://badge.fury.io/rb/custom_counter_cache]
+{<img src="https://badge.fury.io/rb/custom_counter_cache.svg" alt="Gem Version" />}[http://badge.fury.io/rb/custom_counter_cache]
 {<img src="https://travis-ci.org/cedric/custom_counter_cache.svg?branch=master" alt="Build Status" />}[https://travis-ci.org/cedric/custom_counter_cache]
-{<img src="https://codeclimate.com/github/cedric/custom_counter_cache.png" />}[https://codeclimate.com/github/cedric/custom_counter_cache]
+{<img src="https://codeclimate.com/github/cedric/custom_counter_cache.svg" />}[https://codeclimate.com/github/cedric/custom_counter_cache]
 
 == Custom Counter Cache
 
