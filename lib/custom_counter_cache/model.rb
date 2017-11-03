@@ -71,9 +71,9 @@ module CustomCounterCache::Model
       end
 
       # set callbacks
-      after_create  method_name, options
-      after_update  method_name, options
-      after_destroy method_name, options
+      after_create  method_name, options unless Array(options[:except]).include?(:create)
+      after_update  method_name, options unless Array(options[:except]).include?(:update)
+      after_destroy method_name, options unless Array(options[:except]).include?(:destroy)
 
     rescue StandardError => e
       # Support Heroku's database-less assets:precompile pre-deploy step:
