@@ -70,10 +70,15 @@ module CustomCounterCache::Model
         end
       end
 
+      skip_callback = Proc.new { |callback, opts|
+        (opts[:except].present? && opts[:except].include?(callback)) ||
+        (opts[:only].present?   && !opts[:only].include?(callback))
+      }
+
       # set callbacks
-      after_create  method_name, options unless Array(options[:except]).include?(:create)
-      after_update  method_name, options unless Array(options[:except]).include?(:update)
-      after_destroy method_name, options unless Array(options[:except]).include?(:destroy)
+      after_create  method_name, options unless skip_callback.call(:create, options)
+      after_update  method_name, options unless skip_callback.call(:update, options)
+      after_destroy method_name, options unless skip_callback.call(:destroy, options)
 
     rescue StandardError => e
       # Support Heroku's database-less assets:precompile pre-deploy step:

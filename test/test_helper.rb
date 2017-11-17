@@ -31,6 +31,8 @@ ActiveRecord::Schema.define(version: 1) do
 
   create_table :boxes do |t|
     t.integer :green_balls_count, default: 0
+    t.integer :lifetime_balls_count, default: 0
+    t.integer :destroyed_balls_count, default: 0
   end
 
   create_table :balls do |t|
@@ -74,10 +76,18 @@ class Box < ApplicationRecord
   define_counter_cache :green_balls_count do |box|
     box.balls.green.count
   end
+  define_counter_cache :lifetime_balls_count do |box|
+    box.lifetime_balls_count + 1
+  end
+  define_counter_cache :destroyed_balls_count do |box|
+    box.destroyed_balls_count + 1
+  end
 end
 
 class Ball < ApplicationRecord
   belongs_to :box
   scope :green, lambda { where(color: 'green') }
   update_counter_cache :box, :green_balls_count, if: Proc.new { |ball| ball.color_changed? }
+  update_counter_cache :box, :lifetime_balls_count, except: [:update, :destroy]
+  update_counter_cache :box, :destroyed_balls_count, only: [:destroy]
 end

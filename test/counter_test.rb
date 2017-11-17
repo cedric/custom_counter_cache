@@ -77,4 +77,22 @@ class CounterTest < MiniTest::Unit::TestCase
     assert_equal 1, @user.published_count
   end
 
+  def test_except_option
+    @ball = @box.balls.create
+    assert_equal 1, @box.reload.lifetime_balls_count
+    @ball.update(color: 'green')
+    assert_equal 1, @box.reload.lifetime_balls_count
+    @ball.destroy
+    assert_equal 1, @box.reload.lifetime_balls_count
+  end
+
+  def test_only_option
+    @ball = @box.balls.create
+    assert_equal 0, @box.reload.destroyed_balls_count
+    @ball.update(color: 'green')
+    assert_equal 0, @box.reload.destroyed_balls_count
+    @ball.destroy
+    assert_equal 1, @box.reload.destroyed_balls_count
+  end
+
 end
