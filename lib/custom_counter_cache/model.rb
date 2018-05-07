@@ -53,10 +53,13 @@ module CustomCounterCache::Model
       # define callback
       define_method method_name do
         # update old association
-        if send("#{foreign_key}_changed?") || ( reflection.options[:polymorphic] && send("#{association}_type_changed?") )
-          old_id = send("#{foreign_key}_was")
+        rails_5_1_or_newer = ActiveModel.version >= Gem::Version.new('5.1.0')
+        target_key = reflection.options[:polymorphic] ? "#{association}_type" : foreign_key
+        target_changed = rails_5_1_or_newer ? send("saved_change_to_#{target_key}?") : send("#{target_key}_changed?")
+        if target_changed
+          old_id = rails_5_1_or_newer ? send("#{target_key}_before_last_save") : send("#{target_key}_was")
           klass = if reflection.options[:polymorphic]
-            ( send("#{association}_type_was") || send("#{association}_type") ).constantize
+            ( old_id || send("#{association}_type") ).constantize
           else
             reflection.klass
           end
