@@ -44,6 +44,15 @@ end
 class ApplicationRecord < ActiveRecord::Base
   self.abstract_class = true
   include CustomCounterCache::Model
+  @@rails_5_1_or_newer = ActiveModel.version >= Gem::Version.new('5.1.0')
+
+  def saved_change_to_attribute_compat?(attr)
+    if @@rails_5_1_or_newer
+      saved_change_to_attribute?(attr)
+    else
+      attribute_changed?(attr)
+    end
+  end
 end
 
 class User < ApplicationRecord
@@ -55,7 +64,7 @@ end
 
 class Article < ApplicationRecord
   belongs_to :user
-  update_counter_cache :user, :published_count, if: Proc.new { |article| article.state_changed? }
+  update_counter_cache :user, :published_count, if: Proc.new { |article| article.saved_change_to_attribute_compat?(:state) }
   has_many :comments, as: :commentable, dependent: :destroy
   define_counter_cache :comments_count do |article|
     article.comments.where(state: "published").count
@@ -64,7 +73,7 @@ end
 
 class Comment < ApplicationRecord
   belongs_to :commentable, polymorphic: true
-  update_counter_cache :commentable, :comments_count, if: Proc.new { |comment| comment.state_changed? }
+  update_counter_cache :commentable, :comments_count, if: Proc.new { |comment| comment.saved_change_to_attribute_compat?(:state) }
 end
 
 class Counter < ApplicationRecord
@@ -87,7 +96,7 @@ end
 class Ball < ApplicationRecord
   belongs_to :box
   scope :green, lambda { where(color: 'green') }
-  update_counter_cache :box, :green_balls_count, if: Proc.new { |ball| ball.color_changed? }
+  update_counter_cache :box, :green_balls_count, if: Proc.new { |ball| ball.saved_change_to_attribute_compat?(:color) }
   update_counter_cache :box, :lifetime_balls_count, except: [:update, :destroy]
   update_counter_cache :box, :destroyed_balls_count, only: [:destroy]
 end
