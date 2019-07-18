@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   s.files = Dir['lib/**/*.rb']
   s.required_rubygems_version = '>= 1.3.6'
   s.add_dependency('rails', '>= 4.0')
-  s.add_development_dependency('sqlite3', '>= 1.3.3')
+  s.add_development_dependency('sqlite3', '>= 1.3.3', '< 1.4.0')
   s.test_files = Dir['test/**/*.rb']
   s.rubyforge_project = 'custom_counter_cache'
 end
