@@ -10,6 +10,7 @@ gemfile:
   - test/gemfiles/rails-4.2
   - test/gemfiles/rails-5.0
   - test/gemfiles/rails-5.1
+  - test/gemfiles/rails-5.2
 matrix:
   exclude:
   - rvm: 2.4.0
