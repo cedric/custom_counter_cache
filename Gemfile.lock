@@ -121,7 +121,7 @@ PLATFORMS
 
 DEPENDENCIES
   custom_counter_cache!
-  sqlite3 (>= 1.3.3)
+  sqlite3 (>= 1.3.3, < 1.4.0)
 
 BUNDLED WITH
    1.16.0
