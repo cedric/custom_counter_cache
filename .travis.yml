@@ -1,14 +1,14 @@
 language: ruby
 rvm:
-  - 2.2.10
   - 2.3.8
-  - 2.4.0
   - 2.4.9
+  - 2.5.7
+  - 2.6.5
 gemfile:
-  - test/gemfiles/rails-4.2
   - test/gemfiles/rails-5.0
   - test/gemfiles/rails-5.1
   - test/gemfiles/rails-5.2
+  - test/gemfiles/rails-6.0
 
 notifications:
   recipients:
