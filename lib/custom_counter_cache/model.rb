@@ -79,10 +79,9 @@ module CustomCounterCache::Model
       }
 
       # set callbacks
-      after_create  method_name, options unless skip_callback.call(:create, options)
-      after_update  method_name, options unless skip_callback.call(:update, options)
-      after_destroy method_name, options unless skip_callback.call(:destroy, options)
-
+      after_create  method_name, **options unless skip_callback.call(:create, options)
+      after_update  method_name, **options unless skip_callback.call(:update, options)
+      after_destroy method_name, **options unless skip_callback.call(:destroy, options)
     rescue StandardError => e
       # Support Heroku's database-less assets:precompile pre-deploy step:
       raise e unless ENV['DATABASE_URL'].to_s.include?('//user:pass@127.0.0.1/')
