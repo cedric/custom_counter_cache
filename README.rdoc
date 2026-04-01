@@ -1,3 +1,5 @@
+[![tests](https://github.com/cedric/custom_counter_cache/actions/workflows/ci.yml/badge.svg)](https://github.com/cedric/custom_counter_cache/actions/workflows/ci.yml)
+
 == Custom Counter Cache
 
 This is a simple approach to creating a custom counter cache in Rails that can be used across multiple models.
