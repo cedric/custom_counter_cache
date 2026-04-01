@@ -4,6 +4,11 @@
 
 This is a simple approach to creating a custom counter cache in Rails that can be used across multiple models.
 
+=== Requirements
+
+* Ruby >= 3.1
+* Rails >= 7.2
+
 === Installation
 
 Add the following to your Gemfile:
