@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     custom_counter_cache (0.3.0)
-      rails (>= 7.2)
+      rails (>= 7.2, < 9.0)
 
 GEM
   remote: https://rubygems.org/
@@ -233,7 +233,7 @@ DEPENDENCIES
   custom_counter_cache!
   erb
   psych (>= 4.0.0)
-  sqlite3 (>= 2.0)
+  sqlite3 (~> 2.0)
 
 CHECKSUMS
   action_text-trix (2.1.18) sha256=3fdb83f8bff4145d098be283cdd47ac41caf5110bfa6df4695ed7127d7fb3642
