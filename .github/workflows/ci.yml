@@ -12,7 +12,7 @@ jobs:
       matrix:
         include:
           - rails: "6.0"
-            ruby: "3.0"
+            ruby: "2.7"
             gemfile: "test/gemfiles/rails-6.0"
           - rails: "7.2"
             ruby: "3.1"
