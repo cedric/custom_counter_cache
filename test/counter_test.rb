@@ -95,4 +95,16 @@ class CounterTest < Minitest::Test
     assert_equal 1, @box.reload.destroyed_balls_count
   end
 
+  def test_reassigning_article_to_different_user_updates_both_counters
+    @user2 = User.create
+    @article = @user.articles.create(state: 'unpublished')
+    assert_equal 0, @user.reload.published_count
+    assert_equal 0, @user2.reload.published_count
+    # Changing both user and state triggers the :if condition (state changed)
+    # and the reassignment logic inside the callback updates the old user's counter too
+    @article.update(user: @user2, state: 'published')
+    assert_equal 0, @user.reload.published_count
+    assert_equal 1, @user2.reload.published_count
+  end
+
 end
