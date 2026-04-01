@@ -2,3 +2,7 @@
 .ruby-version
 .rvmrc
 *.gem
+Gemfile.lock
+test/gemfiles/*.lock
+.bundle/
+pkg/

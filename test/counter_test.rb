@@ -1,6 +1,6 @@
 require File.join(File.dirname(__FILE__), 'test_helper')
 
-class CounterTest < MiniTest::Unit::TestCase
+class CounterTest < Minitest::Test
 
   def setup
     @user = User.create
@@ -36,7 +36,7 @@ class CounterTest < MiniTest::Unit::TestCase
     assert_equal 1, @user.published_count
     3.times { |i| @user.articles.create(state: 'published') }
     assert_equal 4, @user.published_count
-    @user.articles.each {|a| a.update_attributes(state: 'unpublished') }
+    @user.articles.each {|a| a.update(state: 'unpublished') }
     assert_equal 0, @user.published_count
   end
 
@@ -48,7 +48,7 @@ class CounterTest < MiniTest::Unit::TestCase
     assert_equal 1, @article.comments_count
     3.times { |i| @article.comments.create(state: "published") }
     assert_equal 4, @article.comments_count
-    @article.comments.each { |c| c.update_attributes(state: "unpublished") }
+    @article.comments.each { |c| c.update(state: 'unpublished') }
     assert_equal 0, @article.comments_count
   end
 
@@ -59,7 +59,7 @@ class CounterTest < MiniTest::Unit::TestCase
     assert_equal 1, @box.reload.green_balls_count
     3.times { |i| @box.balls.create(color: 'green') }
     assert_equal 4, @box.reload.green_balls_count
-    @box.balls.each {|b| b.update_attributes(color: 'red') }
+    @box.balls.each {|b| b.update(color: 'red') }
     assert_equal 0, @box.reload.green_balls_count
   end
 

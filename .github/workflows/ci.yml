@@ -1,0 +1,38 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: "Rails ${{ matrix.rails }}"
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rails: "6.0"
+            ruby: "3.0"
+            gemfile: "test/gemfiles/rails-6.0"
+          - rails: "7.2"
+            ruby: "3.1"
+            gemfile: "test/gemfiles/rails-7.2"
+          - rails: "8.0"
+            ruby: "3.3"
+            gemfile: "test/gemfiles/rails-8.0"
+
+    env:
+      BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.gemfile }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Ruby ${{ matrix.ruby }}
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+
+      - name: Run tests
+        run: bundle exec rake gem:test

@@ -15,11 +15,11 @@ module CustomCounterCache::Model
           if counters.loaded? && counter = counters.detect{|c| c.key == cache_column.to_s }
             counter.value
           else
-            counters.find_by_key(cache_column.to_s).try(:value).to_i
+            counters.find_by(key: cache_column.to_s).try(:value).to_i
           end
         end
         define_method "#{cache_column}=" do |count|
-          if ( counter = counters.find_by_key(cache_column.to_s) )
+          if ( counter = counters.find_by(key: cache_column.to_s) )
             counter.update_attribute :value, count.to_i
           else
             counters.create key: cache_column.to_s, value: count.to_i
@@ -53,11 +53,9 @@ module CustomCounterCache::Model
       # define callback
       define_method method_name do
         # update old association
-        rails_5_1_or_newer = ActiveModel.version >= Gem::Version.new('5.1.0')
         target_key = reflection.options[:polymorphic] ? "#{association}_type" : foreign_key
-        target_changed = rails_5_1_or_newer ? send("saved_change_to_#{target_key}?") : send("#{target_key}_changed?")
-        if target_changed
-          old_id = rails_5_1_or_newer ? send("#{target_key}_before_last_save") : send("#{target_key}_was")
+        if send("saved_change_to_#{target_key}?")
+          old_id = send("#{target_key}_before_last_save")
           klass = if reflection.options[:polymorphic]
             ( old_id || send("#{association}_type") ).constantize
           else
