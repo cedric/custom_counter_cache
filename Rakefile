@@ -9,7 +9,7 @@ namespace :gem do
   Rake::TestTask.new(:test) do |test|
     test.libs << 'lib' << 'test'
     test.pattern = 'test/**/*_test.rb'
-    test.verbose = true
+    test.verbose = false
   end
 
   desc 'Build gem.'

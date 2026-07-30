@@ -9,7 +9,11 @@ module CustomCounterCache::Model
 
       # counter accessors
       unless column_names.include?(cache_column.to_s)
-        has_many :counters, as: :countable, dependent: :delete_all
+        # Only declare the :counters association once per class -- a model
+        # can have multiple virtual (non-column) counter caches, and
+        # redeclaring has_many :counters for each one just redefines the
+        # same reader/writer methods again, which Ruby warns about under -w.
+        has_many :counters, as: :countable, dependent: :delete_all unless reflect_on_association(:counters)
         define_method "#{cache_column}" do
           # check if the counter is loaded
           if counters.loaded? && counter = counters.detect{|c| c.key == cache_column.to_s }
