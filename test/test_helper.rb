@@ -95,6 +95,15 @@ class Box < ApplicationRecord
   define_counter_cache :destroyed_balls_count do |box|
     box.destroyed_balls_count + 1
   end
+  define_counter_cache :non_green_balls_count do |box|
+    box.balls.where.not(color: 'green').count
+  end
+  define_counter_cache :marker_a_count do |box|
+    0
+  end
+  define_counter_cache :marker_b_count do |box|
+    0
+  end
 end
 
 class Ball < ApplicationRecord
@@ -103,6 +112,9 @@ class Ball < ApplicationRecord
   update_counter_cache :box, :green_balls_count, if: Proc.new { |ball| ball.saved_change_to_attribute?(:color) }
   update_counter_cache :box, :lifetime_balls_count, except: [:update, :destroy]
   update_counter_cache :box, :destroyed_balls_count, only: [:destroy]
+  update_counter_cache :box, :non_green_balls_count, unless: Proc.new { |ball| ball.color == 'green' }
+  update_counter_cache :box, :marker_a_count, only: [:create]
+  update_counter_cache :box, :marker_b_count, only: [:create], prepend: true
 end
 
 # Stands in for something like the `audited` gem: a has_one association whose

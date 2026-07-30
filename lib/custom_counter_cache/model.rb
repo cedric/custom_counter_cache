@@ -53,16 +53,22 @@ module CustomCounterCache::Model
       # define callback
       define_method method_name do
         # update old association
-        target_key = reflection.options[:polymorphic] ? "#{association}_type" : foreign_key
-        if send("saved_change_to_#{target_key}?")
-          old_id = send("#{target_key}_before_last_save")
-          klass = if reflection.options[:polymorphic]
-            ( old_id || send("#{association}_type") ).constantize
-          else
-            reflection.klass
+        if reflection.options[:polymorphic]
+          type_key = "#{association}_type"
+          id_key   = "#{association}_id"
+          if send("saved_change_to_#{id_key}?") || send("saved_change_to_#{type_key}?")
+            old_type = send("saved_change_to_#{type_key}?") ? send("#{type_key}_before_last_save") : send(type_key)
+            old_id   = send("saved_change_to_#{id_key}?")   ? send("#{id_key}_before_last_save")   : send(id_key)
+            if ( old_type && old_id && record = old_type.constantize.find_by(id: old_id) )
+              record.send("update_#{cache_column}")
+            end
           end
-          if ( old_id && record = klass.find_by(id: old_id) )
-            record.send("update_#{cache_column}")
+        else
+          if send("saved_change_to_#{foreign_key}?")
+            old_id = send("#{foreign_key}_before_last_save")
+            if ( old_id && record = reflection.klass.find_by(id: old_id) )
+              record.send("update_#{cache_column}")
+            end
           end
         end
         # update new association
