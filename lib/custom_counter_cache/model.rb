@@ -9,7 +9,7 @@ module CustomCounterCache::Model
 
       # counter accessors
       unless column_names.include?(cache_column.to_s)
-        has_many :counters, as: :countable, dependent: :destroy
+        has_many :counters, as: :countable, dependent: :delete_all
         define_method "#{cache_column}" do
           # check if the counter is loaded
           if counters.loaded? && counter = counters.detect{|c| c.key == cache_column.to_s }

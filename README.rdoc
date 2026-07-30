@@ -56,6 +56,17 @@ Here is the example model to go with:
     validates :countable, presence: true
   end
 
+Note: do not add <tt>dependent: :destroy</tt> to that +belongs_to+. On a
++belongs_to+, <tt>dependent: :destroy</tt> means "when this Counter is
+destroyed, also destroy the record it belongs to" -- the opposite of what you
+want, and it creates a destroy loop: destroying a countable record cascades
+into destroying its Counters (via the <tt>has_many :counters, dependent:
+:delete_all</tt> this gem defines), and a wrongly-configured +belongs_to+ would
+then cascade back into destroying the same countable record again. The
+countable side's <tt>dependent: :delete_all</tt> already handles cleanup and
+skips Counter's own callbacks entirely, so no +dependent+ option belongs on
+the +belongs_to+ side at all.
+
 If you would like to store your counter cache in an existing table, you can use this migration:
 
   def change

@@ -39,6 +39,14 @@ ActiveRecord::Schema.define(version: 1) do
     t.belongs_to :box
     t.string :color, default: 'red'
   end
+
+  create_table :user_notes do |t|
+    t.belongs_to :user
+  end
+
+  create_table :user_note_logs do |t|
+    t.belongs_to :user_note
+  end
 end
 
 class ApplicationRecord < ActiveRecord::Base
@@ -48,6 +56,7 @@ end
 
 class User < ApplicationRecord
   has_many :articles, dependent: :destroy
+  has_one :user_note, dependent: :destroy
   define_counter_cache :published_count do |user|
     user.articles.where(articles: { state: 'published' }).count
   end
@@ -68,7 +77,11 @@ class Comment < ApplicationRecord
 end
 
 class Counter < ApplicationRecord
-  belongs_to :countable, polymorphic: true
+  # Deliberately mirrors a real-world consumer mistake: adding dependent: :destroy
+  # to this belongs_to (see README "Note"). It must NOT cause destroying a
+  # countable record to recurse back into destroying itself a second time --
+  # see DestroyLoopTest, which is what actually guards against this.
+  belongs_to :countable, polymorphic: true, dependent: :destroy
 end
 
 class Box < ApplicationRecord
@@ -90,4 +103,24 @@ class Ball < ApplicationRecord
   update_counter_cache :box, :green_balls_count, if: Proc.new { |ball| ball.saved_change_to_attribute?(:color) }
   update_counter_cache :box, :lifetime_balls_count, except: [:update, :destroy]
   update_counter_cache :box, :destroyed_balls_count, only: [:destroy]
+end
+
+# Stands in for something like the `audited` gem: a has_one association whose
+# own destroy writes a dependent log record from a before_destroy callback
+# (matching how `audited` hooks in -- before_destroy, not after_destroy, so
+# the record is still persisted? while the callback runs). If destroying the
+# owner (User) ever recurses back into destroying itself a second time, this
+# fails the second time around because the UserNote is no longer persisted.
+class UserNote < ApplicationRecord
+  belongs_to :user
+  has_many :logs, class_name: 'UserNoteLog', foreign_key: :user_note_id, dependent: :destroy
+  before_destroy :write_log
+
+  def write_log
+    logs.create!
+  end
+end
+
+class UserNoteLog < ApplicationRecord
+  belongs_to :user_note
 end
