@@ -1,7 +1,5 @@
-# -*- encoding: utf-8 -*-
-$LOAD_PATH << File.dirname(__FILE__)
 require 'rake/testtask'
-require 'lib/custom_counter_cache/version'
+require_relative 'lib/custom_counter_cache/version'
 
 namespace :gem do
 
@@ -14,16 +12,15 @@ namespace :gem do
 
   desc 'Build gem.'
   task build: :test do
-    system "gem build custom_counter_cache.gemspec"
+    sh 'gem build custom_counter_cache.gemspec'
   end
 
   desc 'Build, tag and push gem.'
   task release: :build do
-    # tag and push
-    system "git tag v#{CustomCounterCache::VERSION}"
-    system "git push origin --tags"
-    # push gem
-    system "gem push custom_counter_cache-#{CustomCounterCache::VERSION}.gem"
+    # sh (not system) so a failed tag or push stops before publishing.
+    sh "git tag v#{CustomCounterCache::VERSION}"
+    sh 'git push origin --tags'
+    sh "gem push custom_counter_cache-#{CustomCounterCache::VERSION}.gem"
   end
 
 end

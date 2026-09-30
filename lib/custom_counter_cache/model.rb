@@ -9,24 +9,30 @@ module CustomCounterCache::Model
 
       # counter accessors
       unless column_names.include?(cache_column.to_s)
-        # Only declare the :counters association once per class -- a model
-        # can have multiple virtual (non-column) counter caches, and
-        # redeclaring has_many :counters for each one just redefines the
-        # same reader/writer methods again, which Ruby warns about under -w.
+        # Declare once per class: redeclaring for each virtual counter triggers method-redefinition warnings.
         has_many :counters, as: :countable, dependent: :delete_all unless reflect_on_association(:counters)
         define_method "#{cache_column}" do
-          # check if the counter is loaded
-          if counters.loaded? && counter = counters.detect{|c| c.key == cache_column.to_s }
-            counter.value
+          # Once loaded (e.g. includes(:counters)), a missing row means 0, not a query.
+          if counters.loaded?
+            counters.detect { |c| c.key == cache_column.to_s }.try(:value).to_i
           else
             counters.find_by(key: cache_column.to_s).try(:value).to_i
           end
         end
         define_method "#{cache_column}=" do |count|
-          if ( counter = counters.find_by(key: cache_column.to_s) )
+          # Update the loaded Counter itself, or the reader keeps returning its stale value.
+          counter = counters.loaded? ? counters.detect { |c| c.key == cache_column.to_s } : counters.find_by(key: cache_column.to_s)
+          if counter
             counter.update_attribute :value, count.to_i
           else
-            counters.create key: cache_column.to_s, value: count.to_i
+            begin
+              # Savepoint: on PostgreSQL a failed INSERT would otherwise abort the caller's whole transaction.
+              self.class.transaction(requires_new: true) { counters.create key: cache_column.to_s, value: count.to_i }
+            rescue ActiveRecord::RecordNotUnique
+              # Lost a create race. A locking read sees the winner's row even under REPEATABLE READ (MySQL).
+              counters.reset
+              counters.lock.find_by!(key: cache_column.to_s).update_attribute :value, count.to_i
+            end
           end
         end
       end
@@ -52,25 +58,28 @@ module CustomCounterCache::Model
       cache_column = cache_column.to_sym
       method_name  = "callback_#{association}_#{cache_column}".to_sym
       reflection   = reflect_on_association(association)
-      foreign_key  = reflection.try(:foreign_key) || reflection.association_foreign_key
+      raise ArgumentError, "#{self} must declare belongs_to :#{association} before update_counter_cache" unless reflection
+      foreign_key  = reflection.foreign_key
 
       # define callback
       define_method method_name do
         # update old association
-        if reflection.options[:polymorphic]
-          type_key = "#{association}_type"
-          id_key   = "#{association}_id"
-          if send("saved_change_to_#{id_key}?") || send("saved_change_to_#{type_key}?")
-            old_type = send("saved_change_to_#{type_key}?") ? send("#{type_key}_before_last_save") : send(type_key)
-            old_id   = send("saved_change_to_#{id_key}?")   ? send("#{id_key}_before_last_save")   : send(id_key)
-            if ( old_type && old_id && record = old_type.constantize.find_by(id: old_id) )
+        if reflection.polymorphic?
+          type_key = reflection.foreign_type
+          id_key   = foreign_key
+          if saved_change_to_attribute?(id_key) || saved_change_to_attribute?(type_key)
+            old_type = saved_change_to_attribute?(type_key) ? attribute_before_last_save(type_key) : self[type_key]
+            old_id   = saved_change_to_attribute?(id_key)   ? attribute_before_last_save(id_key)   : self[id_key]
+            # safe_: the stored type may name a class that has since been renamed or removed.
+            old_klass = old_type&.safe_constantize
+            if ( old_klass && old_id && record = old_klass.find_by(reflection.association_primary_key(old_klass) => old_id) )
               record.send("update_#{cache_column}")
             end
           end
         else
-          if send("saved_change_to_#{foreign_key}?")
-            old_id = send("#{foreign_key}_before_last_save")
-            if ( old_id && record = reflection.klass.find_by(id: old_id) )
+          if saved_change_to_attribute?(foreign_key)
+            old_id = attribute_before_last_save(foreign_key)
+            if ( old_id && record = reflection.klass.find_by(reflection.association_primary_key => old_id) )
               record.send("update_#{cache_column}")
             end
           end

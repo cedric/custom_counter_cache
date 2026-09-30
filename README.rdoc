@@ -7,7 +7,9 @@ This is a simple approach to creating a custom counter cache in Rails that can b
 === Requirements
 
 * Ruby >= 3.1
-* Rails >= 7.2
+* Rails (Active Record) >= 7.2
+
+CI covers the Ruby and Rails versions that are not yet end-of-life.
 
 === Installation
 
@@ -31,7 +33,14 @@ This is the block that will be used to calculate the value for the counter cache
 This will define the after_create, after_update and after_destroy callbacks. An :if option can be provided to limit when these callbacks get triggered.
 
   include CustomCounterCache::Model
-  update_counter_cache :user, :articles_count, if: -> (article) { article.state_changed? }
+  update_counter_cache :user, :articles_count, if: -> (article) { article.destroyed? || article.saved_change_to_state? }
+
+The callbacks run after the record is saved, so use <tt>saved_change_to_state?</tt> rather than
+<tt>state_changed?</tt> (which is always false by then). The :if condition also applies to
+after_destroy, where there are no saved changes, hence the <tt>destroyed?</tt> check.
+
+Other options: <tt>:unless</tt>, <tt>:only</tt> / <tt>:except</tt> (e.g. <tt>only: [:create, :destroy]</tt>)
+and <tt>:prepend</tt>.
 
 These callbacks can be added to any number of models that might need to change the counter cache.
 

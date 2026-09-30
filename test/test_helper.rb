@@ -1,11 +1,11 @@
-require 'rubygems'
 require 'minitest/autorun'
 require 'sqlite3'
-require 'action_view'
 require 'active_record'
 require 'custom_counter_cache'
 
 ActiveRecord::Base.establish_connection(adapter: 'sqlite3', database: ':memory:')
+
+ActiveRecord::Migration.verbose = false
 
 ActiveRecord::Schema.define(version: 1) do
   create_table :users do |t|
@@ -38,6 +38,31 @@ ActiveRecord::Schema.define(version: 1) do
   create_table :balls do |t|
     t.belongs_to :box
     t.string :color, default: 'red'
+  end
+
+  create_table :libraries do |t|
+    t.integer :books_count, default: 0
+  end
+
+  create_table :books do |t|
+    t.belongs_to :library
+  end
+
+  create_table :photos do |t|
+  end
+
+  create_table :tags do |t|
+    t.integer :target_ref
+    t.string :target_kind
+  end
+
+  create_table :teams do |t|
+    t.string :code
+    t.integer :players_count, default: 0
+  end
+
+  create_table :players do |t|
+    t.string :team_code
   end
 
   create_table :user_notes do |t|
@@ -76,11 +101,46 @@ class Comment < ApplicationRecord
   update_counter_cache :commentable, :comments_count, if: Proc.new { |comment| comment.saved_change_to_attribute?(:state) }
 end
 
+# Second commentable sharing Article's virtual :comments_count key.
+class Photo < ApplicationRecord
+  has_many :comments, as: :commentable
+  has_many :tags, as: :target, foreign_key: :target_ref, foreign_type: :target_kind
+  define_counter_cache :comments_count do |photo|
+    photo.comments.where(state: 'published').count
+  end
+  define_counter_cache(:tags_count) { |photo| photo.tags.count }
+end
+
+# Polymorphic belongs_to with non-default key and type columns.
+class Tag < ApplicationRecord
+  belongs_to :target, polymorphic: true, foreign_key: :target_ref, foreign_type: :target_kind
+  update_counter_cache :target, :tags_count
+end
+
+# belongs_to via a non-id primary key.
+class Team < ApplicationRecord
+  has_many :players, primary_key: :code, foreign_key: :team_code
+  define_counter_cache(:players_count) { |team| team.players.count }
+end
+
+class Player < ApplicationRecord
+  belongs_to :team, primary_key: :code, foreign_key: :team_code
+  update_counter_cache :team, :players_count
+end
+
+# Column-only counter: must not get a :counters association.
+class Library < ApplicationRecord
+  has_many :books
+  define_counter_cache(:books_count) { |library| library.books.count }
+end
+
+class Book < ApplicationRecord
+  belongs_to :library, optional: true
+  update_counter_cache :library, :books_count
+end
+
+# Deliberately misconfigured (dependent: :destroy on belongs_to); the destroy-loop tests rely on it.
 class Counter < ApplicationRecord
-  # Deliberately mirrors a real-world consumer mistake: adding dependent: :destroy
-  # to this belongs_to (see README "Note"). It must NOT cause destroying a
-  # countable record to recurse back into destroying itself a second time --
-  # see DestroyLoopTest, which is what actually guards against this.
   belongs_to :countable, polymorphic: true, dependent: :destroy
 end
 
@@ -104,6 +164,12 @@ class Box < ApplicationRecord
   define_counter_cache :marker_b_count do |box|
     0
   end
+  define_counter_cache :create_destroy_events_count do |box|
+    box.create_destroy_events_count + 1
+  end
+  define_counter_cache :update_events_count do |box|
+    box.update_events_count + 1
+  end
 end
 
 class Ball < ApplicationRecord
@@ -115,14 +181,12 @@ class Ball < ApplicationRecord
   update_counter_cache :box, :non_green_balls_count, unless: Proc.new { |ball| ball.color == 'green' }
   update_counter_cache :box, :marker_a_count, only: [:create]
   update_counter_cache :box, :marker_b_count, only: [:create], prepend: true
+  update_counter_cache :box, :create_destroy_events_count, only: [:create, :destroy]
+  update_counter_cache :box, :update_events_count, except: [:create, :destroy]
 end
 
-# Stands in for something like the `audited` gem: a has_one association whose
-# own destroy writes a dependent log record from a before_destroy callback
-# (matching how `audited` hooks in -- before_destroy, not after_destroy, so
-# the record is still persisted? while the callback runs). If destroying the
-# owner (User) ever recurses back into destroying itself a second time, this
-# fails the second time around because the UserNote is no longer persisted.
+# Stands in for `audited`: has_one whose destroy writes a log from before_destroy, so a
+# recursive owner destroy fails on the second pass (the record is no longer persisted).
 class UserNote < ApplicationRecord
   belongs_to :user
   has_many :logs, class_name: 'UserNoteLog', foreign_key: :user_note_id, dependent: :destroy
