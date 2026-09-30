@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
     'changelog_uri' => 'https://github.com/cedric/custom_counter_cache/blob/main/CHANGELOG.md',
     'rubygems_mfa_required' => 'true',
   }
-  s.files = Dir['lib/**/*.rb', 'lib/**/*.rake', 'LICENSE', 'README.rdoc', 'CHANGELOG.md']
+  s.files = Dir['lib/**/*.rb', 'lib/**/*.rake', 'LICENSE', 'README.md', 'CHANGELOG.md']
   s.required_ruby_version = '>= 3.3'
   s.add_dependency('activerecord', '>= 8.0', '< 9.0')
   s.add_dependency('activesupport', '>= 8.0', '< 9.0')

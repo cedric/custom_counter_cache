@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- The README is Markdown (`README.md`) instead of RDoc, formatted like the other gems' READMEs.
+
 ## 0.4.0
 
 ### Breaking
