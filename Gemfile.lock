@@ -1,13 +1,16 @@
 PATH
   remote: .
   specs:
-    custom_counter_cache (0.3.2)
-      activerecord (>= 7.2, < 9.0)
-      activesupport (>= 7.2, < 9.0)
+    custom_counter_cache (0.4.0)
+      activerecord (>= 8.0, < 9.0)
+      activesupport (>= 8.0, < 9.0)
 
 GEM
   remote: https://rubygems.org/
   specs:
+    activejob (8.1.4)
+      activesupport (= 8.1.4)
+      globalid (>= 0.3.6)
     activemodel (8.1.4)
       activesupport (= 8.1.4)
     activerecord (8.1.4)
@@ -31,7 +34,11 @@ GEM
     bigdecimal (4.1.3)
     concurrent-ruby (1.3.8)
     connection_pool (3.0.2)
+    discard (2.0.0)
+      activerecord (>= 7.0, < 9.0)
     drb (2.2.3)
+    globalid (1.4.0)
+      activesupport (>= 6.1)
     i18n (1.15.2)
       concurrent-ruby (~> 1.0)
     json (3.0.2)
@@ -39,6 +46,8 @@ GEM
     minitest (6.0.6)
       drb (~> 2.0)
       prism (~> 1.5)
+    paranoia (3.1.0)
+      activerecord (>= 7, < 8.2)
     prism (1.9.0)
     rake (13.4.2)
     securerandom (0.4.1)
@@ -66,12 +75,16 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
+  activejob (>= 8.0, < 9.0)
   custom_counter_cache!
+  discard (~> 2.0)
   minitest (>= 5.0, < 7)
+  paranoia (~> 3.1)
   rake (~> 13.0)
   sqlite3 (~> 2.0)
 
 CHECKSUMS
+  activejob (8.1.4) sha256=4ed5b2ed8d4cc5c8f5f09becfef8346f202a4884eee0c8c73cae5ac378824099
   activemodel (8.1.4) sha256=9a0906c127bd118aa5f06157db12b8f750da83dccee72db2f658547a0ae7a0e8
   activerecord (8.1.4) sha256=3b4957ea7f246c9231bd7faa909312eac03a9101aaf87977b6c52733ff00b04f
   activesupport (8.1.4) sha256=891dd3fe43c4fc8391934b237b1189bb1f661c932a84a840043db9d46a4e80df
@@ -80,12 +93,15 @@ CHECKSUMS
   bundler (4.0.21) sha256=7cbf5499b426076aa16c8d28a59e4c2c3aad5a438402abcd961f0119f29f1dd0
   concurrent-ruby (1.3.8) sha256=b2f1be836e968ccc78ccfce277ea79c72a88633f22306782c16ff23fb415d1e1
   connection_pool (3.0.2) sha256=33fff5ba71a12d2aa26cb72b1db8bba2a1a01823559fb01d29eb74c286e62e0a
-  custom_counter_cache (0.3.2)
+  custom_counter_cache (0.4.0)
+  discard (2.0.0) sha256=0fc520786b4d7b9b1ea8b2b3dadbb13c3e41d2ce7d297d04869baf1c9e30d2c0
   drb (2.2.3) sha256=0b00d6fdb50995fe4a45dea13663493c841112e4068656854646f418fda13373
+  globalid (1.4.0) sha256=037f12fbf1d9d7a014d501c2d5c77356fd4ddd96d7a7991d6700bba96706f427
   i18n (1.15.2) sha256=00f9eb62412fe593b2a65a97daa75300d37abb8f7202ec748e94b6d46a9dd1b5
   json (3.0.2) sha256=8e6d7e7b11384c21230430cef90b71f14849a34a1f4452796670f7c981bd19df
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
   minitest (6.0.6) sha256=153ea36d1d987a62942382b61075745042a2b3123b1cd48f4c3675af9cc7d6f1
+  paranoia (3.1.0) sha256=36574a46e8df663d0da7d9008e987b72a6a9eccee13c058b7094acc810e39f52
   prism (1.9.0) sha256=7b530c6a9f92c24300014919c9dcbc055bf4cdf51ec30aed099b06cd6674ef85
   rake (13.4.2) sha256=cb825b2bd5f1f8e91ca37bddb4b9aaf345551b4731da62949be002fa89283701
   securerandom (0.4.1) sha256=cc5193d414a4341b6e225f0cb4446aceca8e50d5e1888743fac16987638ea0b1

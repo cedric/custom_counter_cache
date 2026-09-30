@@ -6,8 +6,8 @@ This is a simple approach to creating a custom counter cache in Rails that can b
 
 === Requirements
 
-* Ruby >= 3.1
-* Rails (Active Record) >= 7.2
+* Ruby >= 3.3
+* Rails (Active Record) >= 8.0
 
 CI covers the Ruby and Rails versions that are not yet end-of-life.
 
@@ -17,38 +17,180 @@ Add the following to your Gemfile:
 
   gem 'custom_counter_cache'
 
-=== Example
+== Defining a counter
 
-== Class with counter cache
-
-This is the block that will be used to calculate the value for the counter cache. It will be called by other models through their association via an after_save or after_destroy callback.
+The block calculates the counter's value from its owner. It is called whenever a model that
+declares +update_counter_cache+ (see below) changes.
 
   include CustomCounterCache::Model
   define_counter_cache :articles_count do |user|
     user.articles.where(state: 'published').count
   end
 
-== Class with callbacks
+Pass <tt>touch: true</tt> (or a column name, e.g. <tt>touch: :counted_at</tt>) to also set that
+timestamp, <tt>updated_at</tt> for +true+, on every recount. A column counter is written in the same
+UPDATE. No callbacks run.
 
-This will define the after_create, after_update and after_destroy callbacks. An :if option can be provided to limit when these callbacks get triggered.
+Where the value is kept depends on the counter: a column of the same name, a row in a shared
+counters table, or a cache store (<tt>store: :cache</tt>). See Choosing storage below.
+
+== Triggering recounts
+
+Declare which models change the counter with +update_counter_cache+, naming a +belongs_to+
+association and the counter on its owner. It defines the after_create, after_update and
+after_destroy callbacks (plus after_restore for Paranoia, see Soft deletes).
 
   include CustomCounterCache::Model
-  update_counter_cache :user, :articles_count, if: -> (article) { article.destroyed? || article.saved_change_to_state? }
+  update_counter_cache :user, :articles_count, if: -> (article) { article.saved_change_to_state? }
 
-The callbacks run after the record is saved, so use <tt>saved_change_to_state?</tt> rather than
-<tt>state_changed?</tt> (which is always false by then). The :if condition also applies to
-after_destroy, where there are no saved changes, hence the <tt>destroyed?</tt> check.
+These callbacks can be added to any number of models that might need to change the counter.
+When a record moves to another owner, both the old and the new owner are recounted.
 
-Other options: <tt>:unless</tt>, <tt>:only</tt> / <tt>:except</tt> (e.g. <tt>only: [:create, :destroy]</tt>)
-and <tt>:prepend</tt>.
+Options:
 
-These callbacks can be added to any number of models that might need to change the counter cache.
+* <tt>:if</tt>, <tt>:unless</tt>: limit when the create and update callbacks run. The callbacks
+  run after the record is saved, so use <tt>saved_change_to_state?</tt> rather than
+  <tt>state_changed?</tt>, which is always false by then. They don't apply to destroy or restore:
+  those have no saved changes, and an extra recount is never wrong.
+* <tt>on_change:</tt>: an attribute or an array. Recount on update only when one of them changed;
+  prefer it to +:if+ for plain attribute checks. Create and destroy always recount. It combines
+  with +:if+ and +:unless+ (both must allow the update).
+* <tt>only:</tt>, <tt>except:</tt>: limit the events, any of <tt>:create</tt>, <tt>:update</tt>,
+  <tt>:destroy</tt> and <tt>:restore</tt>, e.g. <tt>only: [:create, :destroy]</tt> or
+  <tt>except: [:destroy]</tt>.
+* <tt>:prepend</tt>: prepend the callbacks instead of appending them.
+* <tt>recount: :later</tt>: recount in a background job instead of right after commit. See
+  When recounts run.
 
-== Counter Cache
+For example, to recount only when the state changes:
 
-To store the counter cache you need to create a column for the model with the counter cache (example: articles_count).
+  update_counter_cache :user, :articles_count, on_change: [:state]
 
-If you would like to store all of your counter caches in a single table, you can use this migration:
+The association's key columns (plus the type column for a polymorphic one) are always watched
+by +on_change+, so moving the record to another owner recounts both owners.
+
+== Grandparent counters
+
+Pass a path of +belongs_to+ associations to recount an owner further up. For a
+<tt>comments_count</tt> on User across all of a user's articles:
+
+  class User < ApplicationRecord
+    include CustomCounterCache::Model
+    has_many :articles
+    has_many :comments, through: :articles
+    define_counter_cache(:comments_count) { |user| user.comments.count }
+  end
+
+  class Comment < ApplicationRecord
+    include CustomCounterCache::Model
+    belongs_to :article
+    update_counter_cache [:article, :user], :comments_count
+  end
+
+  class Article < ApplicationRecord
+    include CustomCounterCache::Model
+    belongs_to :user
+    update_counter_cache :user, :comments_count # an article moving users changes both counts
+  end
+
+Moving a comment recounts the old and the new user, once if they're the same user. The second
+declaration is needed because an Article changing user also changes both users' counts, and only
+Article's own callbacks see that. A step after a polymorphic one is skipped for records whose
+class has no such association; any other missing or non-+belongs_to+ step raises ArgumentError.
+
+== Soft deletes
+
+Discard soft-deletes with an ordinary update, so the callbacks already fire: filter with
+<tt>.kept</tt> in the counter block, and if you use <tt>on_change:</tt> include
+<tt>:discarded_at</tt> in it, or discarding won't recount.
+
+  define_counter_cache(:pages_count) { |notebook| notebook.pages.kept.count }
+  update_counter_cache :notebook, :pages_count, on_change: [:state, :discarded_at]
+
+Paranoia's +destroy+ runs the destroy callbacks, and +restore+ is recounted too, provided
++acts_as_paranoid+ is declared before +update_counter_cache+. Skip it with <tt>except: [:restore]</tt>
+(<tt>:restore</tt> is also accepted by <tt>only:</tt>).
+
+  class Parcel < ApplicationRecord
+    acts_as_paranoid
+    belongs_to :crate
+    update_counter_cache :crate, :parcels_count
+  end
+
+== Batching and skipping
+
+Every triggering save recounts its owner. For bulk work, batch the recounts so each owner and
+counter is recounted once, when the block ends (or when its transaction commits):
+
+  CustomCounterCache.batch do
+    rows.each { |row| article.comments.create!(row) } # one recount of article.comments_count
+  end
+
+Batches nest (the outermost one flushes) and still flush if the block raises, since a recount
+reflects whatever is in the database. To skip recounts entirely, e.g. for an import you'll
+recount afterwards:
+
+  CustomCounterCache.skip { import_comments }
+
+Both are per thread (and per fiber).
+
+== When recounts run
+
+Recounts triggered by these callbacks run after the saving transaction commits, once per owner
+and counter per transaction, and not at all if it rolls back. Each takes a short lock on the
+owner's row while it counts, so two saves committing at once can't leave a stale value: the
+later recount always counts after the earlier commit. (Counting inside the saving transaction
+can't see a concurrent save's uncommitted child, so one of them would overwrite the other.)
+
+The counter therefore changes when the transaction commits, not when the child is saved. Inside
+a transaction, call the update method yourself if you need the new value straight away:
+
+  Article.transaction do
+    user.articles.create!(attrs)
+    user.update_articles_count # recounts now; update_* and recount_counter_caches never wait
+  end
+
+If a recount raises after commit, the save has already succeeded and the count can be rebuilt, so
+the error doesn't propagate to the caller or stop the other recounts queued for that commit. It's
+passed to <tt>Rails.error.unexpected</tt>, which raises in development and test (with
+<tt>consider_all_requests_local</tt>, as by default) and in production reports it to your error
+tracker with the owner and counter in the context. It's also logged. Calling
+<tt>update_<name></tt> or <tt>recount_counter_caches</tt> yourself raises as usual, and so does
+<tt>CustomCounterCache::RecountJob</tt>, so your queue's retries apply.
+
+To recount in a background job instead, enqueued after commit:
+
+  update_counter_cache :user, :articles_count, recount: :later # CustomCounterCache::RecountJob (Active Job)
+
+To pick a queue, <tt>CustomCounterCache::RecountJob.queue_as :low</tt>. Rails' transactional
+tests commit each save within the test transaction, so recounts happen there as they do in
+production.
+
+== Choosing storage
+
+[Column]         Add a column with the counter's name. Fastest to read, and you can sort and
+                 filter by it in SQL. Needs a migration per counter.
+[Counters table] Used automatically when there's no column. One shared table, no migration per
+                 counter; preload with <tt>includes(:counters)</tt>. See The counters table.
+[Cache]          <tt>define_counter_cache :x, store: :cache, expires_in: 12.hours</tt>. Kept in
+                 <tt>CustomCounterCache.cache_store</tt> (defaults to Rails.cache: Redis,
+                 Memcached, Solid Cache...). Reads compute on a miss; a child change deletes the
+                 key after commit instead of recounting, so writes are cheap and never lock the
+                 owner's row. Destroying the owner deletes its keys. Not visible to SQL, and a
+                 delete racing a concurrent read can leave a stale value for up to +expires_in+.
+
+Column or counters table is decided when the counter is read or written, not when the model
+loads, so defining counters never touches the database, and a column added later is picked up.
+
+To use a column, add one:
+
+  def change
+    add_column :users, :articles_count, :integer, default: 0, null: false
+  end
+
+== The counters table
+
+To store counters in a single shared table instead, use this migration:
 
   create_table :counters do |t|
     t.references :countable, polymorphic: true
@@ -58,6 +200,17 @@ If you would like to store all of your counter caches in a single table, you can
   end
   add_index :counters, [ :countable_id, :countable_type, :key ], unique: true
 
+The table holds whole numbers. A block result of +nil+ is stored as 0, and whole values such as
+<tt>4.0</tt> or <tt>BigDecimal('4')</tt> are converted, but a fractional result such as an average
+raises ArgumentError rather than being truncated: give that counter a column of a suitable type
+(e.g. decimal) or use <tt>store: :cache</tt>.
+
++countable_id+ must match your models' primary key type: for string or UUID keys, use
+<tt>t.references :countable, polymorphic: true, type: :uuid</tt> (or <tt>:string</tt>). A model
+with a composite primary key can't use this table, since +countable_id+ holds one value: give its
+counters a column or <tt>store: :cache</tt> (it raises ArgumentError otherwise). Composite keys
+work everywhere else, including composite foreign keys on the +belongs_to+ side.
+
 Here is the example model to go with:
 
   class Counter < ActiveRecord::Base
@@ -65,23 +218,44 @@ Here is the example model to go with:
     validates :countable, presence: true
   end
 
-Note: do not add <tt>dependent: :destroy</tt> to that +belongs_to+. On a
-+belongs_to+, <tt>dependent: :destroy</tt> means "when this Counter is
-destroyed, also destroy the record it belongs to" -- the opposite of what you
-want, and it creates a destroy loop: destroying a countable record cascades
-into destroying its Counters (via the <tt>has_many :counters, dependent:
-:delete_all</tt> this gem defines), and a wrongly-configured +belongs_to+ would
-then cascade back into destroying the same countable record again. The
-countable side's <tt>dependent: :delete_all</tt> already handles cleanup and
-skips Counter's own callbacks entirely, so no +dependent+ option belongs on
-the +belongs_to+ side at all.
+To use a different model name (for example if +Counter+ is already taken), set
+<tt>CustomCounterCache.counter_class_name</tt> (see Configuration).
 
-If you would like to store your counter cache in an existing table, you can use this migration:
+When a record is destroyed, its counter rows are removed with a single DELETE, without loading
+them or running Counter's callbacks. Do not add <tt>dependent: :destroy</tt> to the +belongs_to+
+above: on a +belongs_to+ it means "destroying this Counter also destroys its owner".
 
-  def change
-    add_column :users, :articles_count, :integer, default: 0, null: false
-  end
+== Backfilling and repairing
 
-To backfill your counters, run something like this either in a migration or in the console:
+To backfill your counters, or repair them later, recount every record from the console or a migration:
 
-  User.select(:id).find_each(batch_size: 100) { |u| u.update_articles_count }
+  User.recount_counter_caches
+
+or only some counters and records:
+
+  User.recount_counter_caches(:articles_count, scope: User.where(id: 1..1000), batch_size: 500)
+
+It returns the number of records processed. The same is available as a rake task:
+
+  bin/rails custom_counter_cache:recount MODEL=User COUNTERS=articles_count
+
++COUNTERS+ (comma-separated, default all) and +BATCH_SIZE+ (default 1000) are optional.
+
+Callbacks can't see +update_all+, +delete_all+, +insert_all+ or SQL imports, so counts drift after
+them. Run the recount periodically, or after an import, to repair that. It calls +update_<name>+
+directly, so it also works inside <tt>CustomCounterCache.skip { }</tt>.
+
+In a migration that also adds the column, call <tt>User.reset_column_information</tt> first so the
+backfill writes to the new column.
+
+== Configuration
+
+Set these in an initializer (<tt>config/initializers/custom_counter_cache.rb</tt>):
+
+* <tt>CustomCounterCache.counter_class_name</tt>: the model behind the counters table. Default
+  <tt>'Counter'</tt>. Must be set before your models load.
+* <tt>CustomCounterCache.cache_store</tt>: the store for <tt>store: :cache</tt> counters. Defaults
+  to Rails.cache.
+
+  CustomCounterCache.counter_class_name = 'CounterCache'
+  CustomCounterCache.cache_store = ActiveSupport::Cache::MemoryStore.new
