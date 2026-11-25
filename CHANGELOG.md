@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- The copyright line in `LICENSE` reads `2011` instead of `2011-2026`.
+
 ### Changed
 
 - The README is Markdown (`README.md`) instead of RDoc, formatted like the other gems' READMEs.
