@@ -8,17 +8,21 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
-    name: "Ruby ${{ matrix.ruby }} / Rails ${{ matrix.rails }}"
+    name: "Ruby ${{ matrix.ruby }} / ${{ matrix.deps.name }}"
 
     # Non-EOL Ruby and Rails only; see endoflife.date/ruby and endoflife.date/rails.
     strategy:
       fail-fast: false
       matrix:
         ruby: ["3.3", "3.4", "4.0"]
-        rails: ["8.0", "8.1"]
+        deps:
+          - { name: "Rails 8.0", gemfile: test/gemfiles/rails-8.0 }
+          - { name: "Rails 8.1", gemfile: test/gemfiles/rails-8.1 }
+          # The committed root lockfile, so Dependabot bumps to it are actually tested.
+          - { name: "Gemfile.lock", gemfile: Gemfile }
 
     env:
-      BUNDLE_GEMFILE: ${{ github.workspace }}/test/gemfiles/rails-${{ matrix.rails }}
+      BUNDLE_GEMFILE: ${{ github.workspace }}/${{ matrix.deps.gemfile }}
 
     steps:
       - name: Checkout code
